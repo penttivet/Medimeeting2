@@ -115,30 +115,30 @@ btn.textContent = '✨ Create Summary';
 
 @app.route("/")
 def home():
-    return render_template_string(HTML)
+return render_template_string(HTML)
 
 @app.route("/transcribe", methods=["POST"])
 def transcribe():
-    try:
-     audio_file = request.files["audio"]
+try:
+audio_file = request.files["audio"]
 
-    r = requests.post(
-    "https://api.openai.com/v1/audio/transcriptions",
-    headers={
-    "Authorization": f"Bearer {OPENAI_API_KEY}"
-    },
-    files={
-    "file": (
-    audio_file.filename or "audio.m4a",
-    audio_file.read(),
-     audio_file.mimetype or "audio/mp4"
-   )
-    },
-    data={
-    "model": "whisper-1"
-    },
-    timeout=60
-    )
+r = requests.post(
+"https://api.openai.com/v1/audio/transcriptions",
+headers={
+"Authorization": f"Bearer {OPENAI_API_KEY}"
+},
+files={
+"file": (
+audio_file.filename or "audio.m4a",
+audio_file.read(),
+audio_file.mimetype or "audio/mp4"
+)
+},
+data={
+"model": "whisper-1"
+},
+timeout=60
+)
 
 print("OPENAI TRANSCRIBE RESPONSE:", r.status_code, r.text)
 
@@ -189,4 +189,3 @@ return jsonify({"error": str(e)}), 500
 if __name__ == "__main__":
 port = int(os.environ.get("PORT", 8080))
 app.run(host="0.0.0.0", port=port)
-                     
