@@ -271,8 +271,8 @@ audio_file.filename or 'audio.m4a',
 audio_file.read(),
 audio_file.mimetype or 'audio/mp4'
 )
-},
-data={
+
+},data={
 'model': 'whisper-1'
 },
 timeout=60
@@ -293,11 +293,11 @@ def summarize():
         text = data['text']
         
         prompt = f"Summarize this in 2-3 sentences:\n\n{text}"
-        
         r = requests.post(
-'https://api.openai.com/v1/audio/transcriptions',
+'https://api.openai.com/v1/chat/completions',
 headers={
-'Authorization': f'Bearer {OPENAI_API_KEY}'
+'Authorization': f'Bearer {OPENAI_API_KEY}',
+'Content-Type': 'application/json'
 },
 files={
 'file': (
