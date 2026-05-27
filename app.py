@@ -263,7 +263,13 @@ def transcribe():
         r = requests.post(
             'https://api.openai.com/v1/audio/transcriptions',
             headers={'Authorization': f'Bearer {OPENAI_API_KEY}'},
-            files={'file': ('audio.webm', audio_file.read(), 'audio/webm')},
+            files={
+'file': (
+audio_file.filename or 'audio.m4a',
+audio_file.read(),
+audio_file.mimetype or 'audio/mp4'
+)
+}
             data={'model': 'whisper-1'},
             timeout=60
         )
