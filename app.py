@@ -274,7 +274,7 @@ audio_file.mimetype or 'audio/mp4'
             timeout=60
         )
         if r.status_code != 200:
-            return jsonify({'error': 'Transcription failed'}), 500
+            return jsonify({'error': r.text}), 500
         return jsonify({'text': r.json()['text']})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
