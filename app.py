@@ -115,7 +115,7 @@ btn.textContent = '✨ Create Summary';
 
 @app.route("/")
 def home():
-return render_template_string(HTML)
+    return render_template_string(HTML)
 
 @app.route("/transcribe", methods=["POST"])
 def transcribe():
