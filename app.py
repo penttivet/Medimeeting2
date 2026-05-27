@@ -120,25 +120,25 @@ def home():
 @app.route("/transcribe", methods=["POST"])
 def transcribe():
     try:
-audio_file = request.files["audio"]
+     audio_file = request.files["audio"]
 
-r = requests.post(
-"https://api.openai.com/v1/audio/transcriptions",
-headers={
-"Authorization": f"Bearer {OPENAI_API_KEY}"
-},
-files={
-"file": (
-audio_file.filename or "audio.m4a",
-audio_file.read(),
-audio_file.mimetype or "audio/mp4"
-)
-},
-data={
-"model": "whisper-1"
-},
-timeout=60
-)
+    r = requests.post(
+    "https://api.openai.com/v1/audio/transcriptions",
+    headers={
+    "Authorization": f"Bearer {OPENAI_API_KEY}"
+    },
+    files={
+    "file": (
+    audio_file.filename or "audio.m4a",
+    audio_file.read(),
+     audio_file.mimetype or "audio/mp4"
+   )
+    },
+    data={
+    "model": "whisper-1"
+    },
+    timeout=60
+    )
 
 print("OPENAI TRANSCRIBE RESPONSE:", r.status_code, r.text)
 
