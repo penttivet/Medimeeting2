@@ -295,17 +295,24 @@ def summarize():
         prompt = f"Summarize this in 2-3 sentences:\n\n{text}"
         
         r = requests.post(
-            'https://api.anthropic.com/v1/messages',
-            headers={
-                'x-api-key': ANTHROPIC_API_KEY,
-                'anthropic-version': '2023-06-01'
-            },
-            json={
-                'model': 'claude-sonnet-4-20250514',
-                'max_tokens': 300,
-                'messages': [{'role': 'user', 'content': prompt}]
-            },
-            timeout=30
+'https://api.openai.com/v1/audio/transcriptions',
+headers={
+'Authorization': f'Bearer {OPENAI_API_KEY}'
+},
+files={
+'file': (
+audio_file.filename or 'audio.m4a',
+audio_file.read(),
+audio_file.mimetype or 'audio/mp4'
+)
+},
+data={
+'model': 'whisper-1'
+},
+timeout=60
+)
+
+print("OPENAI RESPONSE:", r.status_code, r.text)
         )
         if r.status_code != 200:
             return jsonify({'error': 'Summary failed'}), 500
