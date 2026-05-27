@@ -1,327 +1,191 @@
-from flask import Flask, render_template_string, request, jsonify
-import requests
-import os 
-
 app = Flask(__name__)
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 
 HTML = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MediMeeting</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            max-width: 500px;
-            width: 100%;
-            padding: 40px;
-        }
-        h1 { text-align: center; color: #333; margin-bottom: 10px; font-size: 32px; }
-        .subtitle { text-align: center; color: #666; margin-bottom: 30px; font-size: 14px; }
-        .tabs { display: flex; gap: 10px; margin-bottom: 30px; }
-        .tab-btn { 
-            flex: 1;
-            padding: 12px;
-            border: 2px solid #ddd;
-            background: white;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s;
-        }
-        .tab-btn.active {
-            background: #667eea;
-            color: white;
-            border-color: #667eea;
-        }
-        .tab { display: none; }
-        .tab.active { display: block; }
-        input { 
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 15px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-        .record-section {
-            text-align: center;
-            margin: 30px 0;
-        }
-        .record-btn {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            border: none;
-            background: #667eea;
-            color: white;
-            font-size: 40px;
-            cursor: pointer;
-            margin: 0 auto;
-            transition: all 0.3s;
-        }
-        .record-btn:hover { background: #764ba2; }
-        .record-btn.recording { background: #ff4757; animation: pulse 1s infinite; }
-        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
-        .status { text-align: center; color: #666; font-size: 13px; margin-top: 10px; }
-        button {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            background: #667eea;
-            color: white;
-            cursor: pointer;
-            font-weight: 600;
-            margin-bottom: 10px;
-            transition: all 0.3s;
-        }
-        button:hover { background: #764ba2; }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
-        .result { 
-            background: #f5f5f5;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 20px;
-            display: none;
-        }
-        .result.show { display: block; }
-        .result-title { font-weight: 600; margin-bottom: 10px; color: #333; }
-        .result-text { font-size: 14px; line-height: 1.6; color: #666; white-space: pre-wrap; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MediMeeting</title>
 </head>
-<body>
-    <div class="container">
-        <h1>🤝 MediMeeting</h1>
-        <p class="subtitle">Record and summarize meetings</p>
+<body style="font-family: Arial; background: linear-gradient(135deg,#667eea,#764ba2); min-height:100vh; display:flex; align-items:center; justify-content:center;">
+<div style="background:white; padding:40px; border-radius:20px; max-width:500px; width:90%; text-align:center;">
+<h1>🤝 MediMeeting</h1>
+<p>Record and summarize meetings</p>
 
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('meeting')">🤝 Meeting</button>
-            <button class="tab-btn" onclick="switchTab('call')">☎️ Call</button>
-        </div>
+<input id="meeting_title" placeholder="Meeting title..." style="width:100%; padding:12px; margin:15px 0;">
 
-        <!-- MEETING TAB -->
-        <div id="meeting" class="tab active">
-            <input type="text" id="meeting_title" placeholder="Meeting title...">
-            
-            <div class="record-section">
-                <button class="record-btn" id="meeting_btn" onclick="toggleRecord('meeting')">🎙️</button>
-                <div class="status" id="meeting_status">Click to record</div>
-            </div>
+<button id="recordBtn" onclick="toggleRecord()" style="font-size:40px; border-radius:50%; width:100px; height:100px;">🎙️</button>
+<p id="status">Click to record</p>
 
-            <button id="meeting_submit" onclick="process('meeting')" disabled>✨ Create Summary</button>
+<button id="submitBtn" onclick="processAudio()" disabled style="width:100%; padding:12px;">✨ Create Summary</button>
 
-            <div id="meeting_result" class="result">
-                <div class="result-title">Transcript</div>
-                <div class="result-text" id="meeting_transcript"></div>
-                <div class="result-title" style="margin-top: 15px;">Summary</div>
-                <div class="result-text" id="meeting_summary"></div>
-            </div>
-        </div>
+<h3>Transcript</h3>
+<pre id="transcript" style="white-space:pre-wrap; text-align:left;"></pre>
 
-        <!-- CALL TAB -->
-        <div id="call" class="tab">
-            <input type="text" id="call_with" placeholder="Call with...">
-            <input type="text" id="call_topic" placeholder="Call topic...">
-            
-            <div class="record-section">
-                <button class="record-btn" id="call_btn" onclick="toggleRecord('call')">🎙️</button>
-                <div class="status" id="call_status">Click to record</div>
-            </div>
+<h3>Summary</h3>
+<pre id="summary" style="white-space:pre-wrap; text-align:left;"></pre>
+</div>
 
-            <button id="call_submit" onclick="process('call')" disabled>✨ Create Summary</button>
+<script>
+let mediaRecorder;
+let audioChunks = [];
+let recordedAudio = null;
+let recording = false;
 
-            <div id="call_result" class="result">
-                <div class="result-title">Transcript</div>
-                <div class="result-text" id="call_transcript"></div>
-                <div class="result-title" style="margin-top: 15px;">Summary</div>
-                <div class="result-text" id="call_summary"></div>
-            </div>
-        </div>
-    </div>
+async function toggleRecord() {
+if (!recording) {
+const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-    <script>
-        let mediaRecorder;
-        let audioChunks = [];
-        let recording = { meeting: false, call: false };
-        let recordedAudio = { meeting: null, call: null };
+let options = {};
+if (MediaRecorder.isTypeSupported('audio/mp4')) {
+options = { mimeType: 'audio/mp4' };
+} else if (MediaRecorder.isTypeSupported('audio/webm')) {
+options = { mimeType: 'audio/webm' };
+}
 
-        function switchTab(tab) {
-            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById(tab).classList.add('active');
-            event.target.classList.add('active');
-        }
+mediaRecorder = new MediaRecorder(stream, options);
+audioChunks = [];
 
-        async function toggleRecord(tab) {
-            if (!recording[tab]) {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    mediaRecorder = new MediaRecorder(stream);
-                    audioChunks = [];
-                    
-                    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-                    mediaRecorder.onstop = () => {
-                        recordedAudio[tab] = new Blob(audioChunks, { type: 'audio/webm' });
-                        document.getElementById(tab + '_submit').disabled = false;
-                    };
-                    
-                    mediaRecorder.start();
-                    recording[tab] = true;
-                    document.getElementById(tab + '_btn').textContent = '⏹️';
-                    document.getElementById(tab + '_btn').classList.add('recording');
-                    document.getElementById(tab + '_status').textContent = 'Recording...';
-                } catch (e) {
-                    alert('Microphone error: ' + e.message);
-                }
-            } else {
-                mediaRecorder.stop();
-                mediaRecorder.stream.getTracks().forEach(t => t.stop());
-                recording[tab] = false;
-                document.getElementById(tab + '_btn').textContent = '🎙️';
-                document.getElementById(tab + '_btn').classList.remove('recording');
-                document.getElementById(tab + '_status').textContent = 'Done';
-            }
-        }
+mediaRecorder.ondataavailable = e => {
+if (e.data.size > 0) audioChunks.push(e.data);
+};
 
-        async function process(tab) {
-            if (!recordedAudio[tab]) return;
+mediaRecorder.onstop = () => {
+recordedAudio = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/mp4' });
+document.getElementById('submitBtn').disabled = false;
+};
 
-            const btn = document.getElementById(tab + '_submit');
-            btn.disabled = true;
-            btn.textContent = '⏳ Processing...';
+mediaRecorder.start();
+recording = true;
+document.getElementById('recordBtn').textContent = '⏹️';
+document.getElementById('status').textContent = 'Recording...';
+} else {
+mediaRecorder.stop();
+mediaRecorder.stream.getTracks().forEach(t => t.stop());
+recording = false;
+document.getElementById('recordBtn').textContent = '🎙️';
+document.getElementById('status').textContent = 'Done';
+}
+}
 
-            try {
-                const formData = new FormData();
-                formData.append('audio', recordedAudio[tab], 'audio.webm');
+async function processAudio() {
+const btn = document.getElementById('submitBtn');
+btn.disabled = true;
+btn.textContent = '⏳ Processing...';
 
-                // Transcribe
-                const transcribeRes = await fetch('/transcribe', {
-                    method: 'POST',
-                    body: formData
-                });
-                const transcribeData = await transcribeRes.json();
-                if (!transcribeRes.ok) throw new Error(transcribeData.error);
+try {
+const formData = new FormData();
+formData.append('audio', recordedAudio, 'audio.m4a');
 
-                // Summarize
-                const summarizeRes = await fetch('/summarize', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        text: transcribeData.text,
-                        tab: tab,
-                        title: document.getElementById(tab + '_title')?.value || '',
-                        with: document.getElementById(tab + '_with')?.value || '',
-                        topic: document.getElementById(tab + '_topic')?.value || ''
-                    })
-                });
-                const summarizeData = await summarizeRes.json();
-                if (!summarizeRes.ok) throw new Error(summarizeData.error);
+const transcribeRes = await fetch('/transcribe', {
+method: 'POST',
+body: formData
+});
 
-                // Show results
-                document.getElementById(tab + '_transcript').textContent = transcribeData.text;
-                document.getElementById(tab + '_summary').textContent = summarizeData.summary;
-                document.getElementById(tab + '_result').classList.add('show');
+const transcribeData = await transcribeRes.json();
+if (!transcribeRes.ok) throw new Error(transcribeData.error);
 
-            } catch (e) {
-                alert('Error: ' + e.message);
-            } finally {
-                btn.disabled = false;
-                btn.textContent = '✨ Create Summary';
-            }
-        }
-    </script>
+document.getElementById('transcript').textContent = transcribeData.text;
+
+const summarizeRes = await fetch('/summarize', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ text: transcribeData.text })
+});
+
+const summarizeData = await summarizeRes.json();
+if (!summarizeRes.ok) throw new Error(summarizeData.error);
+
+document.getElementById('summary').textContent = summarizeData.summary;
+
+} catch (e) {
+alert('Error: ' + e.message);
+} finally {
+btn.disabled = false;
+btn.textContent = '✨ Create Summary';
+}
+}
+</script>
 </body>
 </html>
 """
 
-@app.route('/')
+@app.route("/")
 def home():
-    return render_template_string(HTML)
+return render_template_string(HTML)
 
-@app.route('/transcribe', methods=['POST'])
+@app.route("/transcribe", methods=["POST"])
 def transcribe():
-    try:
-        audio_file = request.files['audio']
-        r = requests.post(
-'https://api.openai.com/v1/audio/transcriptions',
+try:
+audio_file = request.files["audio"]
+
+r = requests.post(
+"https://api.openai.com/v1/audio/transcriptions",
 headers={
-'Authorization': f'Bearer {OPENAI_API_KEY}'
+"Authorization": f"Bearer {OPENAI_API_KEY}"
 },
 files={
-'file': (
-audio_file.filename or 'audio.m4a',
+"file": (
+audio_file.filename or "audio.m4a",
 audio_file.read(),
-audio_file.mimetype or 'audio/mp4'
-)
-
-},data={
-'model': 'whisper-1'
-},
-timeout=60
-)
-
-print("OPENAI RESPONSE:", r.status_code, r.text)
-        
-        if r.status_code != 200:
-            return jsonify({'error': r.text}), 500
-        return jsonify({'text': r.json()['text']})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/summarize', methods=['POST'])
-def summarize():
-    try:
-        data = request.json
-        text = data['text']
-        
-        prompt = f"Summarize this in 2-3 sentences:\n\n{text}"
-        r = requests.post(
-'https://api.openai.com/v1/chat/completions',
-headers={
-'Authorization': f'Bearer {OPENAI_API_KEY}',
-'Content-Type': 'application/json'
-},
-files={
-'file': (
-audio_file.filename or 'audio.m4a',
-audio_file.read(),
-audio_file.mimetype or 'audio/mp4'
+audio_file.mimetype or "audio/mp4"
 )
 },
 data={
-'model': 'whisper-1'
+"model": "whisper-1"
 },
 timeout=60
 )
 
-print("OPENAI RESPONSE:", r.status_code, r.text)
-        )
-        if r.status_code != 200:
-            return jsonify({'error': 'Summary failed'}), 500
-        
-        summary = r.json()['content'][0]['text']
-        return jsonify({'summary': summary})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+print("OPENAI TRANSCRIBE RESPONSE:", r.status_code, r.text)
 
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+if r.status_code != 200:
+return jsonify({"error": r.text}), 500
+
+return jsonify({"text": r.json().get("text", "")})
+
+except Exception as e:
+print("TRANSCRIBE ERROR:", str(e))
+return jsonify({"error": str(e)}), 500
+
+@app.route("/summarize", methods=["POST"])
+def summarize():
+try:
+data = request.json
+text = data.get("text", "")
+
+prompt = f"Summarize this meeting in 2-3 clear sentences:\\n\\n{text}"
+
+r = requests.post(
+"https://api.openai.com/v1/chat/completions",
+headers={
+"Authorization": f"Bearer {OPENAI_API_KEY}",
+"Content-Type": "application/json"
+},
+json={
+"model": "gpt-4o-mini",
+"messages": [
+{"role": "user", "content": prompt}
+]
+},
+timeout=60
+)
+
+print("OPENAI SUMMARY RESPONSE:", r.status_code, r.text)
+
+if r.status_code != 200:
+return jsonify({"error": r.text}), 500
+
+summary = r.json()["choices"][0]["message"]["content"]
+return jsonify({"summary": summary})
+
+except Exception as e:
+print("SUMMARY ERROR:", str(e))
+return jsonify({"error": str(e)}), 500
+
+if __name__ == "__main__":
+port = int(os.environ.get("PORT", 8080))
+app.run(host="0.0.0.0", port=port)
