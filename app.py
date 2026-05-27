@@ -279,7 +279,7 @@ timeout=60
 )
 
 print("OPENAI RESPONSE:", r.status_code, r.text)
-        )
+        
         if r.status_code != 200:
             return jsonify({'error': r.text}), 500
         return jsonify({'text': r.json()['text']})
