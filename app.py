@@ -119,7 +119,7 @@ def home():
 
 @app.route("/transcribe", methods=["POST"])
 def transcribe():
-try:
+    try:
 audio_file = request.files["audio"]
 
 r = requests.post(
