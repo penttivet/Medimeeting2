@@ -1,3 +1,4 @@
+
 from flask import Flask, render_template_string, request, jsonify
 import requests
 import os
@@ -6,6 +7,9 @@ app = Flask(__name__)
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
+
+print(OPENAI:", OPENAI_API_KEY)
+print("ANTHROPIC:, ANTHROPIC_API_KEY)
 
 HTML = """<!DOCTYPE html>
 <html lang="en">
