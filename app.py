@@ -93,9 +93,9 @@ async function toggleRecord(tab) {
 if (!recording[tab]) {
 try {
 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-mediaRecorder = new MediaRecorder(stream),
-       mimetype: 'audio/mp4'
-       });
+mediaRecorder = new MediaRecorder(stream);,
+       
+       
 audioChunks = [];
 mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
 mediaRecorder.onstop = () => {
