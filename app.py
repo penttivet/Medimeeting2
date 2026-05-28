@@ -202,8 +202,12 @@ def summarize():
         summary = r.json()['content'][0]['text']
         return jsonify({'summary': summary})
     except Exception as e:
+        print("TRANSCRIBE ERROR:", STR(E))
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
+
+
+
