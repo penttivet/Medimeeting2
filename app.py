@@ -94,13 +94,10 @@ if (!recording[tab]) {
 try {
 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 mediaRecorder = new MediaRecorder(stream);
-       
-       
 audioChunks = [];
 mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
 mediaRecorder.onstop = () => {
-recordedAudio[tab] = new Blob(audioChunks, { type: 'audio/mp4' 
-});
+recordedAudio[tab] = new Blob(audioChunks, { type: 'audio/webm' });
 document.getElementById(tab + '_submit').disabled = false;
 };
 mediaRecorder.start();
@@ -177,9 +174,8 @@ def transcribe():
             timeout=60
         )
         if r.status_code != 200:
-            print("OPENAI TRANSCRIBE RESPONSE:", r.status_code,r.text)
             return jsonify({'error': r.text}), 500
-         return jsonify({'text': r.json()['text']})
+        return jsonify({'text': r.json()['text']})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -206,12 +202,8 @@ def summarize():
         summary = r.json()['content'][0]['text']
         return jsonify({'summary': summary})
     except Exception as e:
-        print("TRANSCRIBE ERROR:", str(e))
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
-
-
-
