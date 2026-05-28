@@ -94,10 +94,11 @@ if (!recording[tab]) {
 try {
 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 mediaRecorder = new MediaRecorder(stream);
+       mime type: 'audio/mp4'
 audioChunks = [];
 mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
 mediaRecorder.onstop = () => {
-recordedAudio[tab] = new Blob(audioChunks, { type: 'audio/webm' });
+recordedAudio[tab] = new Blob(audioChunks, { type: 'audio/mp4' });
 document.getElementById(tab + '_submit').disabled = false;
 };
 mediaRecorder.start();
