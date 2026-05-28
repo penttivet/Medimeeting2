@@ -177,6 +177,7 @@ def transcribe():
             timeout=60
         )
         if r.status_code != 200:
+               print("OPENAI TRANSCRIBE RESPONSE:", r.status_code,r.text)
             return jsonify({'error': 'Transcription failed'}), 500
         return jsonify({'text': r.json()['text']})
     except Exception as e:
