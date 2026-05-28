@@ -203,7 +203,7 @@ def summarize():
         summary = r.json()['content'][0]['text']
         return jsonify({'summary': summary})
     except Exception as e:
-        print("TRANSCRIBE ERROR:", STR(E))
+        print("TRANSCRIBE ERROR:", str(e))
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
