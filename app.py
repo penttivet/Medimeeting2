@@ -19,8 +19,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .container { background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 500px; width: 100%; padding: 40px; }
 h1 { text-align: center; color: #333; margin-bottom: 10px; font-size: 32px; }
 .subtitle { text-align: center; color: #666; margin-bottom: 20px; font-size: 14px; }
-.lang-section { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; }
-.lang-btn { flex: 1; padding: 10px; border: 2px solid #ddd; background: white; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 16px; transition: all 0.3s; }
+.lang-label { text-align: center; font-size: 12px; color: #999; margin-bottom: 8px; }
+.lang-section { display: flex; gap: 10px; margin-bottom: 20px; }
+.lang-btn { flex: 1; padding: 10px; border: 2px solid #ddd; background: white; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 15px; transition: all 0.3s; }
 .lang-btn.active { background: #667eea; color: white; border-color: #667eea; }
 .tabs { display: flex; gap: 10px; margin-bottom: 30px; }
 .tab-btn { flex: 1; padding: 12px; border: 2px solid #ddd; background: white; border-radius: 10px; cursor: pointer; font-weight: 600; transition: all 0.3s; }
@@ -28,20 +29,22 @@ h1 { text-align: center; color: #333; margin-bottom: 10px; font-size: 32px; }
 .tab { display: none; }
 .tab.active { display: block; }
 input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
-.record-section { text-align: center; margin: 30px 0; }
+.record-section { text-align: center; margin: 20px 0; }
 .record-btn { width: 100px; height: 100px; border-radius: 50%; border: none; background: #667eea; color: white; font-size: 40px; cursor: pointer; margin: 0 auto; transition: all 0.3s; display: flex; align-items: center; justify-content: center; }
 .record-btn:hover { background: #764ba2; }
 .record-btn.recording { background: #ff4757; animation: pulse 1s infinite; }
 @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
 .status { text-align: center; color: #666; font-size: 13px; margin-top: 10px; }
-button.main-btn { width: 100%; padding: 12px; border: none; border-radius: 8px; background: #667eea; color: white; cursor: pointer; font-weight: 600; margin-bottom: 10px; transition: all 0.3s; font-size: 15px; }
-button.main-btn:hover { background: #764ba2; }
-button.main-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.result { background: #f5f5f5; padding: 15px; border-radius: 8px; margin-top: 20px; display: none; }
+.main-btn { width: 100%; padding: 12px; border: none; border-radius: 8px; background: #667eea; color: white; cursor: pointer; font-weight: 600; margin-bottom: 10px; transition: all 0.3s; font-size: 15px; }
+.main-btn:hover { background: #764ba2; }
+.main-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.clear-btn { width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; background: white; color: #999; cursor: pointer; font-weight: 600; margin-bottom: 10px; transition: all 0.3s; font-size: 14px; }
+.clear-btn:hover { border-color: #ff4757; color: #ff4757; }
+.result { background: #f5f5f5; padding: 15px; border-radius: 8px; margin-top: 10px; display: none; }
 .result.show { display: block; }
-.result-title { font-weight: 600; margin-bottom: 10px; color: #333; }
-.result-text { font-size: 14px; line-height: 1.6; color: #666; white-space: pre-wrap; }
-.lang-label { text-align: center; font-size: 12px; color: #999; margin-bottom: 8px; }
+.result-title { font-weight: 600; margin-bottom: 8px; color: #333; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+.result-text { font-size: 14px; line-height: 1.6; color: #555; white-space: pre-wrap; }
+.divider { border: none; border-top: 1px solid #ddd; margin: 12px 0; }
 </style>
 </head>
 <body>
@@ -49,15 +52,15 @@ button.main-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 <h1>🤝 MediMeeting</h1>
 <p class="subtitle">Record and summarize meetings</p>
 
-<div class="lang-label">Choose language / Valitse kieli:</div>
+<div class="lang-label">Valitse kieli / Choose language:</div>
 <div class="lang-section">
-<button class="lang-btn active" onclick="setLang('fi', this)">🇫🇮 Suomi</button>
-<button class="lang-btn" onclick="setLang('en', this)">🇬🇧 English</button>
+<button class="lang-btn active" id="lang_fi" onclick="setLang('fi')">🇫🇮 Suomi</button>
+<button class="lang-btn" id="lang_en" onclick="setLang('en')">🇬🇧 English</button>
 </div>
 
 <div class="tabs">
-<button class="tab-btn active" onclick="switchTab('meeting', this)">🤝 Meeting</button>
-<button class="tab-btn" onclick="switchTab('call', this)">☎️ Call</button>
+<button class="tab-btn active" id="tab_meeting" onclick="switchTab('meeting')">🤝 Meeting</button>
+<button class="tab-btn" id="tab_call" onclick="switchTab('call')">☎️ Call</button>
 </div>
 
 <div id="meeting" class="tab active">
@@ -67,10 +70,12 @@ button.main-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 <div class="status" id="meeting_status">Click to record</div>
 </div>
 <button class="main-btn" id="meeting_submit" onclick="process('meeting')" disabled>✨ Create Summary</button>
+<button class="clear-btn" onclick="clearResult('meeting')">🗑️ Clear / Tyhjennä</button>
 <div id="meeting_result" class="result">
-<div class="result-title" id="meeting_transcript_title">Transcript</div>
+<div class="result-title">🎙️ Transcript</div>
 <div class="result-text" id="meeting_transcript"></div>
-<div class="result-title" style="margin-top: 15px;" id="meeting_summary_title">Summary</div>
+<hr class="divider">
+<div class="result-title">✨ Summary (English)</div>
 <div class="result-text" id="meeting_summary"></div>
 </div>
 </div>
@@ -83,10 +88,12 @@ button.main-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 <div class="status" id="call_status">Click to record</div>
 </div>
 <button class="main-btn" id="call_submit" onclick="process('call')" disabled>✨ Create Summary</button>
+<button class="clear-btn" onclick="clearResult('call')">🗑️ Clear / Tyhjennä</button>
 <div id="call_result" class="result">
-<div class="result-title" id="call_transcript_title">Transcript</div>
+<div class="result-title">🎙️ Transcript</div>
 <div class="result-text" id="call_transcript"></div>
-<div class="result-title" style="margin-top: 15px;" id="call_summary_title">Summary</div>
+<hr class="divider">
+<div class="result-title">✨ Summary (English)</div>
 <div class="result-text" id="call_summary"></div>
 </div>
 </div>
@@ -99,17 +106,27 @@ let recording = { meeting: false, call: false };
 let recordedAudio = { meeting: null, call: null };
 let selectedLang = 'fi';
 
-function setLang(lang, btn) {
+function setLang(lang) {
 selectedLang = lang;
 document.querySelectorAll('.lang-btn').forEach(el => el.classList.remove('active'));
-btn.classList.add('active');
+document.getElementById('lang_' + lang).classList.add('active');
 }
 
-function switchTab(tab, btn) {
+function switchTab(tab) {
 document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
 document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
 document.getElementById(tab).classList.add('active');
-btn.classList.add('active');
+document.getElementById('tab_' + tab).classList.add('active');
+}
+
+function clearResult(tab) {
+document.getElementById(tab + '_transcript').textContent = '';
+document.getElementById(tab + '_summary').textContent = '';
+document.getElementById(tab + '_result').classList.remove('show');
+document.getElementById(tab + '_submit').disabled = true;
+recordedAudio[tab] = null;
+document.getElementById(tab + '_status').textContent = 'Click to record';
+document.getElementById(tab + '_btn').textContent = '🎙️';
 }
 
 async function toggleRecord(tab) {
@@ -137,7 +154,7 @@ mediaRecorder.stream.getTracks().forEach(t => t.stop());
 recording[tab] = false;
 document.getElementById(tab + '_btn').textContent = '🎙️';
 document.getElementById(tab + '_btn').classList.remove('recording');
-document.getElementById(tab + '_status').textContent = selectedLang === 'fi' ? 'Valmis' : 'Done';
+document.getElementById(tab + '_status').textContent = selectedLang === 'fi' ? 'Valmis! Paina Create Summary.' : 'Done! Press Create Summary.';
 }
 }
 
@@ -150,28 +167,18 @@ try {
 const formData = new FormData();
 formData.append('audio', recordedAudio[tab], 'audio.webm');
 formData.append('lang', selectedLang);
-const transcribeRes = await fetch('/transcribe', {
-method: 'POST',
-body: formData
-});
+const transcribeRes = await fetch('/transcribe', { method: 'POST', body: formData });
 const transcribeData = await transcribeRes.json();
 if (!transcribeRes.ok) throw new Error(transcribeData.error);
+
 const summarizeRes = await fetch('/summarize', {
 method: 'POST',
 headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({
-text: transcribeData.text,
-lang: selectedLang,
-tab: tab,
-title: document.getElementById(tab + '_title')?.value || '',
-with: document.getElementById(tab + '_with')?.value || '',
-topic: document.getElementById(tab + '_topic')?.value || ''
-})
+body: JSON.stringify({ text: transcribeData.text, lang: selectedLang })
 });
 const summarizeData = await summarizeRes.json();
 if (!summarizeRes.ok) throw new Error(summarizeData.error);
-document.getElementById(tab + '_transcript_title').textContent = selectedLang === 'fi' ? 'Litterointi' : 'Transcript';
-document.getElementById(tab + '_summary_title').textContent = selectedLang === 'fi' ? 'Yhteenveto' : 'Summary';
+
 document.getElementById(tab + '_transcript').textContent = transcribeData.text;
 document.getElementById(tab + '_summary').textContent = summarizeData.summary;
 document.getElementById(tab + '_result').classList.add('show');
@@ -179,7 +186,7 @@ document.getElementById(tab + '_result').classList.add('show');
 alert('Error: ' + e.message);
 } finally {
 btn.disabled = false;
-btn.textContent = selectedLang === 'fi' ? '✨ Luo yhteenveto' : '✨ Create Summary';
+btn.textContent = '✨ Create Summary';
 }
 }
 </script>
@@ -216,7 +223,7 @@ def summarize():
         text = data['text']
         lang = data.get('lang', 'fi')
         if lang == 'fi':
-            prompt = f"Tee lyhyt 2-3 lauseen yhteenveto suomeksi:\n\n{text}"
+            prompt = f"Summarize the following Finnish text in English in 2-3 sentences. Also include the original Finnish text summary.\n\nText: {text}"
         else:
             prompt = f"Summarize in 2-3 sentences in English:\n\n{text}"
         r = requests.post(
@@ -227,7 +234,7 @@ def summarize():
             },
             json={
                 'model': 'claude-sonnet-4-20250514',
-                'max_tokens': 300,
+                'max_tokens': 400,
                 'messages': [{'role': 'user', 'content': prompt}]
             },
             timeout=30
