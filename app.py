@@ -38,6 +38,8 @@ input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd;
 .main-btn { width: 100%; padding: 12px; border: none; border-radius: 8px; background: #667eea; color: white; cursor: pointer; font-weight: 600; margin-bottom: 10px; transition: all 0.3s; font-size: 15px; }
 .main-btn:hover { background: #764ba2; }
 .main-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.download-btn { width: 100%; padding: 10px; border: 2px solid #2ed573; border-radius: 8px; background: white; color: #2ed573; cursor: pointer; font-weight: 600; margin-bottom: 10px; transition: all 0.3s; font-size: 14px; }
+.download-btn:hover { background: #2ed573; color: white; }
 .clear-btn { width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; background: white; color: #999; cursor: pointer; font-weight: 600; margin-bottom: 10px; transition: all 0.3s; font-size: 14px; }
 .clear-btn:hover { border-color: #ff4757; color: #ff4757; }
 .result { background: #f5f5f5; padding: 15px; border-radius: 8px; margin-top: 10px; display: none; }
@@ -70,6 +72,7 @@ input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd;
 <div class="status" id="meeting_status">Click to record</div>
 </div>
 <button class="main-btn" id="meeting_submit" onclick="process('meeting')" disabled>✨ Create Summary</button>
+<button class="download-btn" id="meeting_download" onclick="downloadAndClear('meeting')" style="display:none">💾 Download & Save / Tallenna</button>
 <button class="clear-btn" onclick="clearResult('meeting')">🗑️ Clear / Tyhjennä</button>
 <div id="meeting_result" class="result">
 <div class="result-title">🎙️ Transkripti / Transcript</div>
@@ -91,6 +94,7 @@ input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd;
 <div class="status" id="call_status">Click to record</div>
 </div>
 <button class="main-btn" id="call_submit" onclick="process('call')" disabled>✨ Create Summary</button>
+<button class="download-btn" id="call_download" onclick="downloadAndClear('call')" style="display:none">💾 Download & Save / Tallenna</button>
 <button class="clear-btn" onclick="clearResult('call')">🗑️ Clear / Tyhjennä</button>
 <div id="call_result" class="result">
 <div class="result-title">🎙️ Transkripti / Transcript</div>
