@@ -8,8 +8,8 @@ app = Flask(__name__)
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 
-print
-print("ANTHROPIC:, ANTHROPIC_API_KEY)
+
+
 
 HTML = """<!DOCTYPE html>
 <html lang="en">
