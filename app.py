@@ -72,11 +72,14 @@ input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd;
 <button class="main-btn" id="meeting_submit" onclick="process('meeting')" disabled>✨ Create Summary</button>
 <button class="clear-btn" onclick="clearResult('meeting')">🗑️ Clear / Tyhjennä</button>
 <div id="meeting_result" class="result">
-<div class="result-title">🎙️ Transcript</div>
+<div class="result-title">🎙️ Transkripti / Transcript</div>
 <div class="result-text" id="meeting_transcript"></div>
 <hr class="divider">
-<div class="result-title">✨ Summary (English)</div>
-<div class="result-text" id="meeting_summary"></div>
+<div class="result-title" id="meeting_summary_fi_label" style="display:none">🇫🇮 Yhteenveto (Suomi)</div>
+<div class="result-text" id="meeting_summary_fi" style="display:none"></div>
+<hr class="divider" id="meeting_divider2" style="display:none">
+<div class="result-title">🇬🇧 Summary (English)</div>
+<div class="result-text" id="meeting_summary_en"></div>
 </div>
 </div>
 
@@ -90,11 +93,14 @@ input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd;
 <button class="main-btn" id="call_submit" onclick="process('call')" disabled>✨ Create Summary</button>
 <button class="clear-btn" onclick="clearResult('call')">🗑️ Clear / Tyhjennä</button>
 <div id="call_result" class="result">
-<div class="result-title">🎙️ Transcript</div>
+<div class="result-title">🎙️ Transkripti / Transcript</div>
 <div class="result-text" id="call_transcript"></div>
 <hr class="divider">
-<div class="result-title">✨ Summary (English)</div>
-<div class="result-text" id="call_summary"></div>
+<div class="result-title" id="call_summary_fi_label" style="display:none">🇫🇮 Yhteenveto (Suomi)</div>
+<div class="result-text" id="call_summary_fi" style="display:none"></div>
+<hr class="divider" id="call_divider2" style="display:none">
+<div class="result-title">🇬🇧 Summary (English)</div>
+<div class="result-text" id="call_summary_en"></div>
 </div>
 </div>
 </div>
@@ -121,7 +127,11 @@ document.getElementById('tab_' + tab).classList.add('active');
 
 function clearResult(tab) {
 document.getElementById(tab + '_transcript').textContent = '';
-document.getElementById(tab + '_summary').textContent = '';
+document.getElementById(tab + '_summary_en').textContent = '';
+document.getElementById(tab + '_summary_fi').textContent = '';
+document.getElementById(tab + '_summary_fi').style.display = 'none';
+document.getElementById(tab + '_summary_fi_label').style.display = 'none';
+document.getElementById(tab + '_divider2').style.display = 'none';
 document.getElementById(tab + '_result').classList.remove('show');
 document.getElementById(tab + '_submit').disabled = true;
 recordedAudio[tab] = null;
@@ -180,7 +190,19 @@ const summarizeData = await summarizeRes.json();
 if (!summarizeRes.ok) throw new Error(summarizeData.error);
 
 document.getElementById(tab + '_transcript').textContent = transcribeData.text;
-document.getElementById(tab + '_summary').textContent = summarizeData.summary;
+document.getElementById(tab + '_summary_en').textContent = summarizeData.summary_en;
+
+if (selectedLang === 'fi' && summarizeData.summary_fi) {
+document.getElementById(tab + '_summary_fi').textContent = summarizeData.summary_fi;
+document.getElementById(tab + '_summary_fi').style.display = 'block';
+document.getElementById(tab + '_summary_fi_label').style.display = 'block';
+document.getElementById(tab + '_divider2').style.display = 'block';
+} else {
+document.getElementById(tab + '_summary_fi').style.display = 'none';
+document.getElementById(tab + '_summary_fi_label').style.display = 'none';
+document.getElementById(tab + '_divider2').style.display = 'none';
+}
+
 document.getElementById(tab + '_result').classList.add('show');
 } catch (e) {
 alert('Error: ' + e.message);
@@ -222,10 +244,22 @@ def summarize():
         data = request.json
         text = data['text']
         lang = data.get('lang', 'fi')
+
         if lang == 'fi':
-            prompt = f"Summarize the following Finnish text in English in 2-3 sentences. Also include the original Finnish text summary.\n\nText: {text}"
+            prompt = f"""Olet lääketieteellinen sihteeri. Sinulle annetaan suomenkielinen kokouksen transkripti.
+
+Tee kaksi yhteenvetoa:
+1. SUOMEKSI: Lyhyt yhteenveto 2-3 lauseella suomeksi.
+2. ENGLANNIKSI: Short summary in 2-3 sentences in English.
+
+Vastaa TÄSMÄLLEEN tässä muodossa (älä lisää muuta tekstiä):
+SUOMI: [suomenkielinen yhteenveto]
+ENGLISH: [english summary]
+
+Transkripti: {text}"""
         else:
-            prompt = f"Summarize in 2-3 sentences in English:\n\n{text}"
+            prompt = f"Summarize the following meeting transcript in 2-3 sentences in English:\n\n{text}"
+
         r = requests.post(
             'https://api.anthropic.com/v1/messages',
             headers={
@@ -234,15 +268,29 @@ def summarize():
             },
             json={
                 'model': 'claude-sonnet-4-20250514',
-                'max_tokens': 400,
+                'max_tokens': 600,
                 'messages': [{'role': 'user', 'content': prompt}]
             },
             timeout=30
         )
         if r.status_code != 200:
             return jsonify({'error': 'Summary failed'}), 500
-        summary = r.json()['content'][0]['text']
-        return jsonify({'summary': summary})
+
+        response_text = r.json()['content'][0]['text']
+
+        if lang == 'fi':
+            summary_fi = ''
+            summary_en = ''
+            for line in response_text.split('\n'):
+                line = line.strip()
+                if line.startswith('SUOMI:'):
+                    summary_fi = line.replace('SUOMI:', '').strip()
+                elif line.startswith('ENGLISH:'):
+                    summary_en = line.replace('ENGLISH:', '').strip()
+            return jsonify({'summary_fi': summary_fi, 'summary_en': summary_en})
+        else:
+            return jsonify({'summary_fi': '', 'summary_en': response_text})
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
