@@ -129,6 +129,32 @@ document.getElementById(tab).classList.add('active');
 document.getElementById('tab_' + tab).classList.add('active');
 }
 
+function downloadAndClear(tab) {
+const title = document.getElementById(tab === 'meeting' ? 'meeting_title' : 'call_with').value || tab;
+const transcript = document.getElementById(tab + '_transcript').textContent;
+const summaryFi = document.getElementById(tab + '_summary_fi').textContent;
+const summaryEn = document.getElementById(tab + '_summary_en').textContent;
+
+let content = `MEDIMEETING - ${title}\n`;
+content += `Date: ${new Date().toLocaleString('fi-FI')}\n`;
+content += `${'='.repeat(50)}\n\n`;
+content += `TRANSKRIPTI / TRANSCRIPT:\n${transcript}\n\n`;
+if (summaryFi) {
+content += `YHTEENVETO (SUOMI):\n${summaryFi}\n\n`;
+}
+content += `SUMMARY (ENGLISH):\n${summaryEn}\n`;
+
+const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+const url = URL.createObjectURL(blob);
+const a = document.createElement('a');
+a.href = url;
+a.download = `medimeeting_${title.replace(/\s+/g,'_')}_${new Date().toISOString().slice(0,10)}.txt`;
+a.click();
+URL.revokeObjectURL(url);
+
+setTimeout(() => clearResult(tab), 500);
+}
+
 function clearResult(tab) {
 document.getElementById(tab + '_transcript').textContent = '';
 document.getElementById(tab + '_summary_en').textContent = '';
@@ -138,6 +164,7 @@ document.getElementById(tab + '_summary_fi_label').style.display = 'none';
 document.getElementById(tab + '_divider2').style.display = 'none';
 document.getElementById(tab + '_result').classList.remove('show');
 document.getElementById(tab + '_submit').disabled = true;
+document.getElementById(tab + '_download').style.display = 'none';
 recordedAudio[tab] = null;
 document.getElementById(tab + '_status').textContent = 'Click to record';
 document.getElementById(tab + '_btn').textContent = '🎙️';
@@ -208,6 +235,7 @@ document.getElementById(tab + '_divider2').style.display = 'none';
 }
 
 document.getElementById(tab + '_result').classList.add('show');
+document.getElementById(tab + '_download').style.display = 'block';
 } catch (e) {
 alert('Error: ' + e.message);
 } finally {
